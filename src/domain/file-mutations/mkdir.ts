@@ -13,6 +13,5 @@ export function useMkdir() {
       safeFetch("POST", `/v1/drives/${driveID}/fs/mkdir`, data),
     invalidate: "fs",
     errorMessage: "Create Folder failed",
-    silent: !true,
   });
 }

@@ -272,3 +272,9 @@ export const useWindowStore = create<State & Action>((set, get) => ({
     set({ mouseEnter: enter });
   },
 }));
+
+if (typeof window !== "undefined" && process.env.NODE_ENV !== "production") {
+  (
+    window as unknown as { __windowStore?: typeof useWindowStore }
+  ).__windowStore = useWindowStore;
+}

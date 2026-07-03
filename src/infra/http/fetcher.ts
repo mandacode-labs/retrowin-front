@@ -38,9 +38,7 @@ export async function safeFetch<T>(
         : (JSON.stringify(body) as BodyInit),
   });
 
-  // biome-ignore lint/complexity/noUselessUndefinedInitialization: keep the
-  // narrow initial type until either branch fills `parsed`.
-  let parsed: unknown;
+  let parsed: unknown | undefined;
   if (
     ALLOWED_STATUSES_FOR_BODY.includes(response.status) &&
     response.status !== 204

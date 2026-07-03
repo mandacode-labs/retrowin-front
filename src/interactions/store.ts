@@ -160,6 +160,19 @@ function isCancelEvent(ev: InteractionEvent): boolean {
   return false;
 }
 
+const TERMINAL_RESET_TYPES: ReadonlyArray<InteractionEvent["type"]> = [
+  "pointer-down",
+  "pointer-move",
+  "pointer-up",
+  "wheel",
+  "key-down",
+  "key-up",
+];
+
+function shouldResetOnTerminal(ev: InteractionEvent): boolean {
+  return (TERMINAL_RESET_TYPES as ReadonlyArray<string>).includes(ev.type);
+}
+
 export function transition(
   state: InteractionRootState,
   ev: InteractionEvent
@@ -220,8 +233,25 @@ export function transition(
     }
   } else if (cancel && drag.phase !== "idle") {
     drag = { ...drag, phase: "ended-cancelled" };
-  } else if (drag.phase === "dropping") {
-    drag = { ...drag, phase: "ended-completed" };
+  }
+  // Track whether the drag machine already *entered* a terminal phase
+  // via this same event. If so, we leave the terminal phase visible
+  // to observers for one extra transition and only reset on a
+  // *subsequent* event.
+  if (
+    (drag.phase === "dropping" ||
+      drag.phase === "ended-completed" ||
+      drag.phase === "ended-cancelled") &&
+    drag.phase !== state.drag.phase
+  ) {
+    // already terminal — leave it visible so observers can commit.
+  } else if (
+    (state.drag.phase === "dropping" ||
+      state.drag.phase === "ended-completed" ||
+      state.drag.phase === "ended-cancelled") &&
+    shouldResetOnTerminal(ev)
+  ) {
+    drag = initialDrag;
   }
 
   // ------------------------------------------------------------------ select-box
@@ -249,7 +279,11 @@ export function transition(
     }
   } else if (cancel && selectBox.phase === "active") {
     selectBox = { ...selectBox, phase: "ended" };
-  } else if (selectBox.phase === "ended") {
+  } else if (
+    selectBox.phase === "ended" &&
+    state.selectBox.phase === "ended" &&
+    shouldResetOnTerminal(ev)
+  ) {
     selectBox = initialSelectBox;
   }
 
@@ -276,8 +310,11 @@ export function transition(
   } else if (cancel && windowAffordance.phase === "active") {
     windowAffordance = { ...windowAffordance, phase: "ended-cancelled" };
   } else if (
-    windowAffordance.phase === "ended-completed" ||
-    windowAffordance.phase === "ended-cancelled"
+    (windowAffordance.phase === "ended-completed" ||
+      windowAffordance.phase === "ended-cancelled") &&
+    (state.windowAffordance.phase === "ended-completed" ||
+      state.windowAffordance.phase === "ended-cancelled") &&
+    shouldResetOnTerminal(ev)
   ) {
     windowAffordance = initialWindowAffordance;
   }
@@ -308,7 +345,11 @@ export function transition(
     }
   } else if (cancel && imagePanZoom.phase === "panning") {
     imagePanZoom = { ...imagePanZoom, phase: "ending" };
-  } else if (imagePanZoom.phase === "ending") {
+  } else if (
+    imagePanZoom.phase === "ending" &&
+    state.imagePanZoom.phase === "ending" &&
+    shouldResetOnTerminal(ev)
+  ) {
     imagePanZoom = initialImagePanZoom;
   }
 
@@ -406,6 +447,14 @@ export const useInteractionStore = create<
   },
   cancelDrag: () => set({ drag: initialDrag }),
 }));
+
+if (typeof window !== "undefined" && process.env.NODE_ENV !== "production") {
+  // Dev-only debug handle. In production tree-shake removes the
+  // window assignment entirely.
+  (
+    window as unknown as { __interactionStore?: typeof useInteractionStore }
+  ).__interactionStore = useInteractionStore;
+}
 
 export function resetInteractionStoreForTests() {
   useInteractionStore.setState(

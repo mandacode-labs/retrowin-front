@@ -40,14 +40,10 @@ export default function BackgroundMenu({
     }
     const folderPath = joinPath(path, NEW_FOLDER_NAME);
     closeMenu();
-    // useMkdir emits a toast on failure and fs invalidation on success
-    // internally, so the only thing left to do is await the mutation.
-    // Errors are swallowed because the toast hook has already notified
-    // the user.
     try {
       await mkdir.run({ driveID, data: { path: folderPath } });
     } catch {
-      // ignored — toast already shown by useSafeMutation
+      // toast already shown by useSafeMutation
     }
   }, [path, driveID, mkdir, closeMenu]);
 

@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  type InteractionRootState,
   initialState,
   transition,
-  type InteractionRootState,
 } from "@/interactions/store";
 
 const POINTER = {
@@ -17,7 +17,10 @@ const POINTER = {
   altKey: false,
 } as const;
 
-function step(state: InteractionRootState, ev: Parameters<typeof transition>[1]) {
+function step(
+  state: InteractionRootState,
+  ev: Parameters<typeof transition>[1]
+) {
   return transition(state, ev);
 }
 
@@ -27,7 +30,11 @@ const EV_DOWN = (iid: string, x: number, y: number) => ({
   zone: { kind: "file-item" as const, iid },
 });
 
-const EV_MOVE = (x: number, y: number, zone: Parameters<typeof transition>[1]["zone"] = null) => ({
+const EV_MOVE = (
+  x: number,
+  y: number,
+  zone: { kind: "folder-target"; iid: string } | null = null
+) => ({
   type: "pointer-move" as const,
   pointer: { ...POINTER, x, y },
   zone,
@@ -61,10 +68,7 @@ describe("drag-and-drop reducer (integrated)", () => {
   it("sets hover only when pointer over a folder-target or background", () => {
     let s = step(initialState, EV_DOWN("file-1", 10, 10));
     s = step(s, EV_MOVE(50, 60));
-    s = step(
-      s,
-      EV_MOVE(80, 80, { kind: "folder-target", iid: "/folder-1" })
-    );
+    s = step(s, EV_MOVE(80, 80, { kind: "folder-target", iid: "/folder-1" }));
     expect(s.drag.phase).toBe("dragging");
     if (s.drag.phase === "dragging") expect(s.drag.hoverIid).toBe("/folder-1");
   });

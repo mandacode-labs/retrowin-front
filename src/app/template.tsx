@@ -1,34 +1,16 @@
 "use client";
 
 import { QueryClientProvider } from "@tanstack/react-query";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect } from "react";
 import { installFetchCredentials, queryClient } from "@/infra/http";
-import { startMockService } from "@/mocks";
 
+// Template keeps MSW off so the dev server hits the real backend at
+// https://api.mdrive.mandacode.com. The Orval-emitted handlers are
+// still available for unit tests under src/infra/http/generated/index.msw.
 export default function Template({ children }: { children: React.ReactNode }) {
-  const [mswReady, setMswReady] = useState(false);
-
   useEffect(() => {
     installFetchCredentials();
-
-    if (process.env.NODE_ENV === "development") {
-      startMockService()
-        .then(() => {
-          console.log("MSW started successfully");
-          setMswReady(true);
-        })
-        .catch((err) => {
-          console.error("Failed to start MSW:", err);
-          setMswReady(true);
-        });
-    } else {
-      setMswReady(true);
-    }
   }, []);
-
-  if (!mswReady) {
-    return <div className="flex-center full-size">Loading...</div>;
-  }
 
   return (
     <QueryClientProvider client={queryClient}>
