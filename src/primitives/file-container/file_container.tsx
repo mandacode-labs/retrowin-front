@@ -1,4 +1,6 @@
 import { useCallback, useEffect } from "react";
+import type { DirEntry } from "@/core/http/types";
+import { joinPath } from "@/core/path";
 import { useDriveLs } from "@/domain/file-listing";
 import {
   getFileTypeFromEntry,
@@ -6,8 +8,6 @@ import {
   SpecialFileName,
   VirtualFileType,
 } from "@/entities/file";
-import type { DirEntry } from "@/infra/http/types";
-import { joinPath } from "@/infra/path";
 import FileItem from "@/primitives/file-item/file_item";
 import styles from "./file_container.module.css";
 

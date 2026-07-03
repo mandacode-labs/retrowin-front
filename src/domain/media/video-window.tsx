@@ -1,5 +1,5 @@
-import { usePresignDownload } from "@/infra/http";
-import { useWindowStore } from "@/infra/stores";
+import { usePresignDownload } from "@/core/http";
+import { useWindowStore } from "@/core/stores";
 import styles from "./video-window.module.css";
 
 export default function VideoViewer({ fileKey: path }: { fileKey: string }) {

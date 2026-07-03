@@ -1,9 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useFileStore, useWindowStore } from "@/core/stores";
 import { WindowType } from "@/entities/window";
-import { useFileStore, useWindowStore } from "@/infra/stores";
-import { useContextMenuState } from "@/interactions";
+import { useContextMenuState } from "@/runtime";
 import BackgroundMenu from "./background-menu";
 import FileMenu from "./file-menu";
 import styles from "./menu-box.module.css";

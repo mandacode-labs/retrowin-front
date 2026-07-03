@@ -1,6 +1,6 @@
+import { useWindowStore } from "@/core/stores";
 import { useDriveStat } from "@/domain/file-listing";
 import { isDirectory, isSymlink } from "@/entities/file";
-import { useWindowStore } from "@/infra/stores";
 import styles from "./info-window.module.css";
 
 function formatBytes(bytes: number): string {

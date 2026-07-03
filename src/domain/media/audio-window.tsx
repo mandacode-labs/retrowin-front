@@ -1,5 +1,5 @@
-import { usePresignDownload } from "@/infra/http";
-import { useWindowStore } from "@/infra/stores";
+import { usePresignDownload } from "@/core/http";
+import { useWindowStore } from "@/core/stores";
 
 export default function Audio({ fileKey: path }: { fileKey: string }) {
   const windows = useWindowStore((state) => state.windows);

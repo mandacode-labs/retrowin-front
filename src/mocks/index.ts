@@ -6,3 +6,10 @@ export async function startMockService() {
   const { startWorker } = await import("./browser");
   return startWorker();
 }
+
+export {
+  type DirNode,
+  type DriveRecord,
+  type MkdirResult,
+  resetMockFilesystem,
+} from "@/mocks/filesystem";

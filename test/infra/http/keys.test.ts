@@ -1,6 +1,6 @@
 import type { Query } from "@tanstack/react-query";
 import { describe, expect, it } from "vitest";
-import { isFsQuery } from "@/infra/http/keys";
+import { isFsQuery } from "@/core/http/keys";
 
 function makeQuery(key: ReadonlyArray<unknown>): Query {
   return {

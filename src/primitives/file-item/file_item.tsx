@@ -1,6 +1,9 @@
 "use client";
 
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useLs } from "@/core/http";
+import { useFileStore, useWindowStore } from "@/core/stores";
+import { createSerialKey } from "@/core/stores/serial-key";
 import type { FileType } from "@/entities/file";
 import {
   BackendFileType,
@@ -11,9 +14,6 @@ import {
   VirtualFileType,
 } from "@/entities/file";
 import { WindowType } from "@/entities/window";
-import { useLs } from "@/infra/http";
-import { useFileStore, useWindowStore } from "@/infra/stores";
-import { createSerialKey } from "@/infra/stores/serial-key";
 import FileIcon from "@/primitives/file-icon/file_icon";
 import FileName from "@/primitives/file-name/file_name";
 import styles from "./file_item.module.css";

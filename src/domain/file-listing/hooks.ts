@@ -3,8 +3,8 @@ import {
   getGetDriveQueryOptions,
   getLsQueryOptions,
   getStatQueryOptions,
-} from "@/infra/http";
-import type { DirContent, DirEntry } from "@/infra/http/types";
+} from "@/core/http";
+import type { DirContent, DirEntry } from "@/core/http/types";
 
 export function useDrive(driveID: string) {
   return useQuery({

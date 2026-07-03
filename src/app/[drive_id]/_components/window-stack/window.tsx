@@ -1,8 +1,8 @@
 import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { getWindowConfig } from "@/config/window";
+import { useWindowStore } from "@/core/stores";
 import { WindowType } from "@/entities/window";
-import { useWindowStore } from "@/infra/stores";
-import { useWindowAffordance } from "@/interactions/adapters/use-window-affordance";
+import { useWindowAffordance } from "@/runtime/adapters/use-window-affordance";
 import styles from "./window.module.css";
 import WindowContent from "./window-content-router";
 import WindowHeader from "./window-header";
@@ -86,12 +86,15 @@ export default memo(function Window({ windowKey }: { windowKey: string }) {
     }
   }, [wa, windowKey, position, size]);
 
-  // When the FSM transitions into ended-completed for *this* window,
-  // commit the visible preview to local state. ended-cancelled is the
-  // only other terminal phase.
+  // When the FSM transitions into ended (and not cancelled) for this
+  // window, commit the visible preview to local state.
   const committedWaRef = useRef(wa.phase);
   useEffect(() => {
-    if (wa.phase === "ended-completed" && committedWaRef.current === "active") {
+    if (
+      wa.phase === "ended" &&
+      committedWaRef.current === "active" &&
+      !wa.cancelled
+    ) {
       if (wa.kind === "move" && wa.start && wa.last && wa.iid === windowKey) {
         const dx = wa.last.x - wa.start.x;
         const dy = wa.last.y - wa.start.y;

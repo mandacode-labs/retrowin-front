@@ -9,12 +9,12 @@ import Navbar from "@/app/[drive_id]/_components/navbar/navbar";
 import SelectBoxLayer from "@/app/[drive_id]/_components/select-box-layer";
 import Window from "@/app/[drive_id]/_components/window-stack/window";
 import { BindingsClient } from "@/app/[drive_id]/_lib/bindings-client";
+import { createWindowKey } from "@/core/random-keys";
+import { useWindowStore } from "@/core/stores";
 import { useMe } from "@/domain/auth";
 import { useDrive } from "@/domain/file-listing";
 import { ToastContainer } from "@/domain/toast";
 import { WindowType } from "@/entities/window";
-import { createWindowKey } from "@/infra/random-keys";
-import { useWindowStore } from "@/infra/stores";
 import FileContainer from "@/primitives/file-container/file_container";
 import styles from "./page.module.css";
 

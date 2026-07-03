@@ -1,4 +1,4 @@
-import { useWindowStore } from "@/infra/stores";
+import { useWindowStore } from "@/core/stores";
 import FileContainer from "@/primitives/file-container/file_container";
 import styles from "./navigator-window.module.css";
 

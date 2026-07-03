@@ -1,7 +1,7 @@
 import { memo, useEffect, useRef, useState } from "react";
+import { useFileStore, useWindowStore } from "@/core/stores";
+import { parseSerialKey } from "@/core/stores/serial-key";
 import { useRename } from "@/domain/file-mutations";
-import { useFileStore, useWindowStore } from "@/infra/stores";
-import { parseSerialKey } from "@/infra/stores/serial-key";
 import styles from "./file_name.module.css";
 
 export default memo(function FileName({

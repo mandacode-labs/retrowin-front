@@ -1,6 +1,6 @@
+import { safeFetch } from "@/core/http";
+import type { RmBody } from "@/core/http/types";
 import { useSafeMutation } from "@/domain/file-mutations/safe";
-import { safeFetch } from "@/infra/http";
-import type { RmBody } from "@/infra/http/types";
 
 export interface RmVars {
   driveID: string;

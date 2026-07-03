@@ -1,6 +1,6 @@
 "use client";
 
-import { selectBoxRect, useSelectBox } from "@/interactions";
+import { selectBoxRect, useSelectBox } from "@/runtime";
 import styles from "./select-box-layer.module.css";
 
 export default function SelectBoxLayer({

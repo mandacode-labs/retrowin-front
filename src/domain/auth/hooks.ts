@@ -5,8 +5,8 @@ import {
   getAuthMeQueryOptions,
   getListDrivesQueryKey,
   getListDrivesQueryOptions,
-} from "@/infra/http";
-import type { DriveCreate, User } from "@/infra/http/types";
+} from "@/core/http";
+import type { DriveCreate, User } from "@/core/http/types";
 
 type Fetcher = (
   url: string,

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { API_BASE_URL } from "@/infra/http";
+import { API_BASE_URL } from "@/core/http";
 
 export default function LoginPage() {
   useEffect(() => {
