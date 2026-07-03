@@ -193,19 +193,19 @@ export default function SystemSelectionPage() {
                   Boolean(drive.id)
                 )
                 .map((drive) => (
-                <button
-                  key={drive.id}
-                  className={styles.user_tile}
-                  onClick={() => handleDriveSelect(drive.id)}
-                  type="button"
-                  aria-label={`Select ${drive.name}`}
-                >
-                  <div className={styles.user_avatar}>
-                    <XPImageIcons.Home />
-                  </div>
-                  <span className={styles.user_name}>{drive.name}</span>
-                </button>
-              ))}
+                  <button
+                    key={drive.id}
+                    className={styles.user_tile}
+                    onClick={() => handleDriveSelect(drive.id)}
+                    type="button"
+                    aria-label={`Select ${drive.name}`}
+                  >
+                    <div className={styles.user_avatar}>
+                      <XPImageIcons.Home />
+                    </div>
+                    <span className={styles.user_name}>{drive.name}</span>
+                  </button>
+                ))}
               <button
                 className={styles.user_tile}
                 onClick={() => setIsCreateMode(true)}

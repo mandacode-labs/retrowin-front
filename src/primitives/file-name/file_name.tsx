@@ -37,7 +37,7 @@ export default memo(function FileName({
     }
 
     try {
-      await renameMutation.mutateAsync({
+      await renameMutation.run({
         driveID,
         path: fileKey,
         newName: newName.trim(),

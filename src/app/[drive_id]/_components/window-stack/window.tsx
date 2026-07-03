@@ -1,218 +1,154 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { getWindowConfig } from "@/config/window";
 import { WindowType } from "@/entities/window";
-import { useEventStore, useWindowStore } from "@/infra/stores";
+import { useWindowStore } from "@/infra/stores";
+import { useWindowAffordance } from "@/interactions/adapters/use-window-affordance";
 import styles from "./window.module.css";
 import WindowContent from "./window-content-router";
 import WindowHeader from "./window-header";
 
+const MIN_SIZE = { width: 250, height: 180 };
+
 export default memo(function Window({ windowKey }: { windowKey: string }) {
-  const minWindowSize = useMemo(() => ({ width: 250, height: 180 }), []);
-
-  const [maximized, setMaximized] = useState(false);
-  const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
-  const [prevWindowSize, setPrevWindowSize] = useState({ width: 0, height: 0 });
-  const [windowPosition, setWindowPosition] = useState({ x: 0, y: 0 });
-  const [prevWindowPosition, setPrevWindowPosition] = useState({ x: 0, y: 0 });
-  const [contentLoading, setContentLoading] = useState(false);
-
-  const targetWindow = useWindowStore((state) =>
-    state.windows.find((w) => w.key === windowKey)
+  const targetWindow = useWindowStore((s) =>
+    s.windows.find((w) => w.key === windowKey)
   );
-  const resizingCursor = useEventStore((state) => state.resizingCursor);
-  const closeWindow = useWindowStore((state) => state.closeWindow);
-  const minimizeWindow = useWindowStore((state) => state.minimizeWindow);
-  const setResizingCursor = useEventStore((state) => state.setResizingCursor);
-  const highlightWindow = useWindowStore((state) => state.highlightWindow);
-  const prevWindow = useWindowStore((state) => state.prevWindow);
-  const nextWindow = useWindowStore((state) => state.nextWindow);
-  const setCurrentWindow = useWindowStore((state) => state.setCurrentWindow);
-  const setMouseEnter = useWindowStore((state) => state.setMouseEnter);
-  const setTitle = useWindowStore((state) => state.setTitle);
-  const hasPrevWindow = useWindowStore((state) => state.hasPrevWindow);
-  const hasNextWindow = useWindowStore((state) => state.hasNextWindow);
+  const closeWindow = useWindowStore((s) => s.closeWindow);
+  const minimizeWindow = useWindowStore((s) => s.minimizeWindow);
+  const highlightWindow = useWindowStore((s) => s.highlightWindow);
+  const prevWindow = useWindowStore((s) => s.prevWindow);
+  const nextWindow = useWindowStore((s) => s.nextWindow);
+  const setCurrentWindow = useWindowStore((s) => s.setCurrentWindow);
+  const setMouseEnter = useWindowStore((s) => s.setMouseEnter);
+  const setTitle = useWindowStore((s) => s.setTitle);
+  const hasPrevWindow = useWindowStore((s) => s.hasPrevWindow);
+  const hasNextWindow = useWindowStore((s) => s.hasNextWindow);
 
   const windowRef = useRef<HTMLDivElement>(null);
-  const windowHeaderRef = useRef<HTMLDivElement>(null);
   const windowContentRef = useRef<HTMLDivElement>(null);
   const positionInitializedRef = useRef(false);
 
+  const [maximized, setMaximized] = useState(false);
+  const [size, setSize] = useState({ width: 0, height: 0 });
+  const [prevSize, setPrevSize] = useState({ width: 0, height: 0 });
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [prevPosition, setPrevPosition] = useState({ x: 0, y: 0 });
+  const [contentLoading, setContentLoading] = useState(false);
+
+  const wa = useWindowAffordance();
+
   useEffect(() => {
-    if (targetWindow?.type === WindowType.Uploader) {
+    if (!targetWindow) return;
+    if (targetWindow.type === WindowType.Uploader) {
       setTitle(windowKey, "Uploader");
-    } else if (targetWindow?.targetKey) {
-      const path = targetWindow.targetKey;
-      const fileName = path.split("/").filter(Boolean).pop() || path;
-      setTitle(windowKey, fileName);
+    } else if (targetWindow.targetKey) {
+      const segments = targetWindow.targetKey.split("/").filter(Boolean);
+      setTitle(windowKey, segments.pop() || targetWindow.targetKey);
     }
-  }, [setTitle, targetWindow?.targetKey, targetWindow?.type, windowKey]);
+  }, [setTitle, windowKey, targetWindow]);
+
+  // Initial placement: center the window on the viewport the first time
+  // we render for a given target window.
+  useEffect(() => {
+    if (windowRef.current && targetWindow && !positionInitializedRef.current) {
+      const config = getWindowConfig(targetWindow.type);
+      const x = document.body.clientWidth / 2 - config.defaultSize.width / 2;
+      const y = document.body.clientHeight / 2 - config.defaultSize.height / 2;
+      setPosition({ x, y });
+      setSize(config.defaultSize);
+      positionInitializedRef.current = true;
+    }
+  });
+
+  // Drive inline style from local state, unless the affordance FSM is
+  // actively dragging this window — then we render the live preview.
+  useEffect(() => {
+    const node = windowRef.current;
+    if (!node) return;
+    const active =
+      wa.phase === "active" &&
+      wa.iid === windowKey &&
+      wa.kind === "move" &&
+      wa.start !== null &&
+      wa.last !== null;
+    if (active && wa.start && wa.last) {
+      const dx = wa.last.x - wa.start.x;
+      const dy = wa.last.y - wa.start.y;
+      node.style.left = `${position.x + dx}px`;
+      node.style.top = `${position.y + dy}px`;
+      node.style.width = `${size.width}px`;
+      node.style.height = `${size.height}px`;
+    } else {
+      node.style.width = `${size.width}px`;
+      node.style.height = `${size.height}px`;
+      node.style.left = `${position.x}px`;
+      node.style.top = `${position.y}px`;
+    }
+  }, [wa, windowKey, position, size]);
+
+  // When the FSM transitions into ended-completed for *this* window,
+  // commit the visible preview to local state. ended-cancelled is the
+  // only other terminal phase.
+  const committedWaRef = useRef(wa.phase);
+  useEffect(() => {
+    if (wa.phase === "ended-completed" && committedWaRef.current === "active") {
+      if (wa.kind === "move" && wa.start && wa.last && wa.iid === windowKey) {
+        const dx = wa.last.x - wa.start.x;
+        const dy = wa.last.y - wa.start.y;
+        const next = clampPosition(
+          {
+            x: position.x + dx,
+            y: position.y + dy,
+          },
+          size
+        );
+        setPosition(next);
+      } else if (
+        wa.kind === "resize" &&
+        wa.start &&
+        wa.last &&
+        wa.iid === windowKey
+      ) {
+        const node = windowRef.current;
+        if (node) {
+          const rect = node.getBoundingClientRect();
+          const width = Math.max(wa.last.x - rect.left, MIN_SIZE.width);
+          const height = Math.max(wa.last.y - rect.top, MIN_SIZE.height);
+          setSize({ width, height });
+        }
+      }
+    }
+    committedWaRef.current = wa.phase;
+  }, [wa, windowKey, position, size]);
+
+  const maximizeWindow = useCallback(() => {
+    setPrevSize(size);
+    setPrevPosition(position);
+    setSize({
+      width: document.body.clientWidth,
+      height: document.body.clientHeight,
+    });
+    setPosition({ x: 0, y: 0 });
+    setMaximized(true);
+  }, [position, size]);
+
+  const revertWindowSize = useCallback(() => {
+    setSize(prevSize);
+    setPosition(prevPosition);
+    setMaximized(false);
+  }, [prevSize, prevPosition]);
 
   const enterWindow = useCallback(() => {
     setCurrentWindow({
       key: windowKey,
       windowRef,
       contentRef: windowContentRef,
-      headerRef: windowHeaderRef,
+      headerRef: null,
     });
   }, [setCurrentWindow, windowKey]);
 
-  const enterWindowHeader = useCallback(() => {
-    setCurrentWindow(null);
-  }, [setCurrentWindow]);
-
-  useEffect(() => {
-    if (windowRef.current && targetWindow && !positionInitializedRef.current) {
-      const config = getWindowConfig(targetWindow.type);
-      const x = document.body.clientWidth / 2 - config.defaultSize.width / 2;
-      const y = document.body.clientHeight / 2 - config.defaultSize.height / 2;
-      setWindowPosition({ x, y });
-      setWindowSize(config.defaultSize);
-      positionInitializedRef.current = true;
-    }
-  }, [targetWindow]);
-
-  useEffect(() => {
-    if (windowRef.current) {
-      windowRef.current.style.width = `${windowSize.width}px`;
-      windowRef.current.style.height = `${windowSize.height}px`;
-    }
-  }, [windowSize]);
-
-  useEffect(() => {
-    if (windowRef.current) {
-      windowRef.current.style.left = `${windowPosition.x}px`;
-      windowRef.current.style.top = `${windowPosition.y}px`;
-    }
-  }, [windowPosition]);
-
-  const maximizeWindow = useCallback(() => {
-    setPrevWindowSize(windowSize);
-    setPrevWindowPosition(windowPosition);
-    setWindowSize({
-      width: document.body.clientWidth,
-      height: document.body.clientHeight,
-    });
-    setWindowPosition({ x: 0, y: 0 });
-    setMaximized(true);
-  }, [windowPosition, windowSize]);
-
-  const revertWindowSize = useCallback(() => {
-    setWindowSize(prevWindowSize);
-    setWindowPosition(prevWindowPosition);
-    setMaximized(false);
-  }, [prevWindowSize, prevWindowPosition]);
-
-  const moveWindow = useCallback(
-    (e: React.MouseEvent) => {
-      if (
-        windowRef.current &&
-        windowHeaderRef.current &&
-        e.clientX > 0 &&
-        e.clientY > 0 &&
-        !resizingCursor
-      ) {
-        const headerRect = windowHeaderRef.current.getBoundingClientRect();
-        const x = e.clientX - headerRect.left;
-        const y = e.clientY - headerRect.top;
-        const handleMouseMove = (e: MouseEvent) => {
-          if (windowRef.current) {
-            setWindowPosition({
-              x: e.clientX - x,
-              y: e.clientY - y,
-            });
-          }
-        };
-        const handleMouseUp = () => {
-          if (windowRef.current) {
-            const windowRect = windowRef.current.getBoundingClientRect();
-            const x = windowRect.left;
-            const y = windowRect.top;
-            let newX = x;
-            let newY = y;
-            if (x < 0) {
-              newX = 0;
-            }
-            if (y < 0) {
-              newY = 0;
-            }
-            if (x + windowSize.width > document.body.clientWidth) {
-              newX = document.body.clientWidth - windowSize.width;
-            }
-            if (y + windowSize.height > document.body.clientHeight) {
-              newY = document.body.clientHeight - windowSize.height;
-            }
-            setWindowPosition({ x: newX, y: newY });
-          }
-          window.removeEventListener("mousemove", handleMouseMove);
-          window.removeEventListener("mouseup", handleMouseUp);
-        };
-
-        window.addEventListener("mousemove", handleMouseMove);
-        window.addEventListener("mouseup", handleMouseUp);
-      }
-    },
-    [resizingCursor, windowSize.height, windowSize.width]
-  );
-
-  const changeCursor = useCallback(
-    (e: MouseEvent) => {
-      if (!windowRef.current) return;
-      const rect = windowRef.current.getBoundingClientRect();
-      if (e.clientX > rect.right - 10 && e.clientY > rect.bottom - 10) {
-        setResizingCursor(true);
-        windowRef.current.style.cursor = "nwse-resize";
-      } else {
-        setResizingCursor(false);
-        windowRef.current.style.cursor = "default";
-      }
-    },
-    [setResizingCursor]
-  );
-  useEffect(() => {
-    const currentWindow = windowRef.current;
-    if (!currentWindow) return;
-    currentWindow.addEventListener("mousemove", changeCursor);
-    return () => {
-      currentWindow.removeEventListener("mousemove", changeCursor);
-    };
-  }, [changeCursor]);
-
-  const resizeWindow = useCallback(
-    (e: MouseEvent) => {
-      if (!windowRef.current) return;
-      const rect = windowRef.current.getBoundingClientRect();
-      if (
-        resizingCursor &&
-        e.clientX > rect.right - 10 &&
-        e.clientY > rect.bottom - 10
-      ) {
-        const handleMouseMove = (e: MouseEvent) => {
-          const width = Math.max(e.clientX - rect.left, minWindowSize.width);
-          const height = Math.max(e.clientY - rect.top, minWindowSize.height);
-          setWindowSize({ width, height });
-        };
-        const handleMouseUp = () => {
-          document.removeEventListener("mousemove", handleMouseMove);
-          document.removeEventListener("mouseup", handleMouseUp);
-        };
-        document.addEventListener("mousemove", handleMouseMove);
-        document.addEventListener("mouseup", handleMouseUp);
-      }
-    },
-    [minWindowSize.width, minWindowSize.height, resizingCursor]
-  );
-  useEffect(() => {
-    const currentWindow = windowRef.current;
-    if (!currentWindow) return;
-    currentWindow.addEventListener("mousedown", resizeWindow);
-    return () => {
-      currentWindow.removeEventListener("mousedown", resizeWindow);
-    };
-  }, [resizeWindow]);
-
-  if (targetWindow?.minimized) {
-    return null;
-  }
+  if (targetWindow?.minimized) return null;
+  if (!targetWindow) return null;
 
   return (
     <article
@@ -223,43 +159,61 @@ export default memo(function Window({ windowKey }: { windowKey: string }) {
       onMouseLeave={() => setMouseEnter(false)}
     >
       <WindowHeader
-        ref={windowHeaderRef}
-        onMouseDown={moveWindow}
         loading={contentLoading}
-        title={targetWindow?.title || ""}
+        title={targetWindow.title || ""}
         prevWindowAction={() => prevWindow(windowKey)}
         nextWindowAction={() => nextWindow(windowKey)}
         hasPrevWindow={hasPrevWindow(windowKey)}
         hasNextWindow={hasNextWindow(windowKey)}
         buttonActions={[
-          {
-            action: () => minimizeWindow(windowKey),
-            icon: "minimize",
-          },
+          { action: () => minimizeWindow(windowKey), icon: "minimize" },
           {
             action: maximized ? revertWindowSize : maximizeWindow,
             icon: maximized ? "exit_fullscreen" : "fullscreen",
           },
-          {
-            action: () => closeWindow(windowKey),
-            icon: "close",
-          },
+          { action: () => closeWindow(windowKey), icon: "close" },
         ]}
-        onMouseEnter={enterWindowHeader}
+        onMouseEnter={() => setCurrentWindow(null)}
+        windowKey={windowKey}
+        affordance="move"
       />
-      {targetWindow && (
-        <WindowContent
-          fileKey={targetWindow.targetKey}
-          fileName={
-            targetWindow.targetKey.split("/").filter(Boolean).pop() || ""
-          }
-          windowKey={windowKey}
-          setLoading={setContentLoading}
-          type={targetWindow.type}
-          ref={windowContentRef}
-          onMouseEnter={enterWindow}
-        />
-      )}
+      <WindowContent
+        fileKey={targetWindow.targetKey}
+        fileName={targetWindow.targetKey.split("/").filter(Boolean).pop() || ""}
+        windowKey={windowKey}
+        setLoading={setContentLoading}
+        type={targetWindow.type}
+        ref={windowContentRef}
+        onMouseEnter={enterWindow}
+      />
+      <div
+        aria-hidden="true"
+        data-iid={windowKey}
+        data-zone="window-affordance"
+        data-affordance="resize"
+        style={{
+          position: "absolute",
+          right: 0,
+          bottom: 0,
+          width: 14,
+          height: 14,
+          cursor: "nwse-resize",
+          background: "transparent",
+        }}
+      />
     </article>
   );
 });
+
+function clampPosition(
+  next: { x: number; y: number },
+  size: { width: number; height: number }
+): { x: number; y: number } {
+  if (typeof document === "undefined") return next;
+  const maxX = Math.max(0, document.body.clientWidth - size.width);
+  const maxY = Math.max(0, document.body.clientHeight - size.height);
+  return {
+    x: Math.min(Math.max(0, next.x), maxX),
+    y: Math.min(Math.max(0, next.y), maxY),
+  };
+}

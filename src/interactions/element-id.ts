@@ -6,3 +6,14 @@ export function resolveIid(target: EventTarget | null): Iid | null {
   const node = target.closest<HTMLElement>("[data-iid]");
   return node?.dataset.iid ?? null;
 }
+
+export function resolveAttribute(
+  target: EventTarget | null,
+  attribute: string
+): string | null {
+  if (!(target instanceof Element)) return null;
+  const node = target.closest<HTMLElement>(`[${attribute}]`);
+  if (!node) return null;
+  const value = node.getAttribute(attribute);
+  return value ?? null;
+}

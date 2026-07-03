@@ -11,6 +11,7 @@ import Window from "@/app/[drive_id]/_components/window-stack/window";
 import { BindingsClient } from "@/app/[drive_id]/_lib/bindings-client";
 import { useMe } from "@/domain/auth";
 import { useDrive } from "@/domain/file-listing";
+import { ToastContainer } from "@/domain/toast";
 import { WindowType } from "@/entities/window";
 import { createWindowKey } from "@/infra/random-keys";
 import { useWindowStore } from "@/infra/stores";
@@ -82,11 +83,7 @@ export default function DrivePage() {
   }
 
   return (
-    <div
-      className={`${styles.page} flex-center full-size`}
-      onContextMenu={(e) => e.preventDefault()}
-      role="application"
-    >
+    <div className={`${styles.page} flex-center full-size`} role="application">
       <BindingsClient />
       <Background>
         <MenuBox>
@@ -97,6 +94,8 @@ export default function DrivePage() {
                 className={`full-size flex-center ${styles.background_window}`}
                 onMouseEnter={onMouseEnter}
                 aria-label="background workspace"
+                data-iid="workspace"
+                data-zone="background"
               >
                 <FileContainer
                   windowKey={backgroundWindowKey}
@@ -116,6 +115,7 @@ export default function DrivePage() {
         </MenuBox>
       </Background>
       <Navbar windows={windows} driveID={driveID} />
+      <ToastContainer />
     </div>
   );
 }

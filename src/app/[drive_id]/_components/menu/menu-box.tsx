@@ -1,161 +1,104 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import type { FileType } from "@/entities/file";
+"use client";
+
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { WindowType } from "@/entities/window";
-import { useEventStore, useFileStore, useWindowStore } from "@/infra/stores";
+import { useFileStore, useWindowStore } from "@/infra/stores";
+import { useContextMenuState } from "@/interactions";
 import BackgroundMenu from "./background-menu";
 import FileMenu from "./file-menu";
 import styles from "./menu-box.module.css";
 import WindowMenu from "./window-menu";
 
 export default function MenuBox({ children }: { children: React.ReactNode }) {
-  // States
-  const [menuType, setMenuType] = useState<
-    "file" | "window" | "background" | null
-  >(null);
-  const [windowType, setWindowType] = useState<WindowType | null>(null);
+  const menu = useContextMenuState();
+  const menuRef = useRef<HTMLDivElement | null>(null);
+  const [open, setOpen] = useState(false);
 
-  // Refs
-  const menuRef = useRef<HTMLDivElement>(null);
-
-  // Store states
-  const currentWindow = useWindowStore((state) => state.currentWindow);
-  const highlightedFile = useFileStore((state) => state.highlightedFile);
-  const pressedKeys = useEventStore((state) => state.pressedKeys);
-  // Store actions
-  const setMenuRef = useFileStore((state) => state.setMenuRef);
-  const isFileKeySelected = useFileStore((state) => state.isFileKeySelected);
-  const unselectAllFiles = useFileStore((state) => state.unselectAllFiles);
-  const findWindow = useWindowStore((state) => state.findWindow);
-  const getBackgroundWindow = useWindowStore(
-    (state) => state.getBackgroundWindow
-  );
-
-  // States
-  const [targetFile, setTargetFile] = useState<{
-    fileKey: string;
-    fileName: string;
-    fileType: FileType;
-  } | null>(null);
-  const [targetFileKey, setTargetFileKey] = useState<string | null>(null);
-
-  const handleContextMenu = useCallback(
-    (e: React.MouseEvent) => {
-      if (e.button !== 2) return;
-      const currentMenuRef = menuRef.current;
-      if (currentMenuRef) {
-        e.preventDefault();
-        currentMenuRef.style.left = `${e.clientX}px`;
-        currentMenuRef.style.top = `${e.clientY}px`;
-        // Set menu type to background by default
-      }
-      // Use currentWindow if valid, otherwise fall back to background window
-      const validWindow =
-        currentWindow && findWindow(currentWindow.key)
-          ? findWindow(currentWindow.key)
-          : getBackgroundWindow();
-      if (validWindow) {
-        setWindowType(validWindow.type);
-        switch (validWindow.type) {
-          case WindowType.Background:
-            setMenuType("background");
-            setTargetFileKey(validWindow.targetKey);
-            break;
-          case WindowType.Navigator:
-            setMenuType("window");
-            setTargetFileKey(validWindow.targetKey);
-            break;
-        }
-      }
-      if (highlightedFile) {
-        if (
-          !pressedKeys.includes("Shift") &&
-          !isFileKeySelected(highlightedFile.fileKey)
-        ) {
-          unselectAllFiles();
-        }
-        setTargetFile({
-          fileKey: highlightedFile.fileKey,
-          fileName: highlightedFile.fileName,
-          fileType: highlightedFile.type,
-        });
-        setMenuType("file");
-      }
-    },
-    [
-      currentWindow,
-      findWindow,
-      getBackgroundWindow,
-      highlightedFile,
-      isFileKeySelected,
-      pressedKeys,
-      unselectAllFiles,
-    ]
-  );
+  useEffect(() => {
+    const next = menuRef.current;
+    if (!next) return;
+    if (menu.phase === "open" && menu.pointer) {
+      next.style.left = `${menu.pointer.x}px`;
+      next.style.top = `${menu.pointer.y}px`;
+      next.style.display = "block";
+      setOpen(true);
+    } else {
+      next.style.display = "none";
+      setOpen(false);
+    }
+  }, [menu]);
 
   const closeMenu = useCallback(() => {
-    setMenuType(null);
-    setTargetFile(null);
+    if (menuRef.current) menuRef.current.style.display = "none";
+    setOpen(false);
+    useFileStore.setState({ renamingFileSerial: null });
   }, []);
 
-  const handleMouseDown = useCallback(
-    (e: MouseEvent) => {
-      if (e.button === 0) {
-        const currentMenuRef = menuRef.current;
-        if (
-          currentMenuRef &&
-          e.target !== currentMenuRef &&
-          !currentMenuRef.contains(e.target as Node)
-        ) {
-          closeMenu();
-        }
-      }
-    },
-    [closeMenu]
-  );
-
-  useEffect(() => {
-    document.addEventListener("mousedown", handleMouseDown);
-    return () => {
-      document.removeEventListener("mousedown", handleMouseDown);
-    };
-  }, [handleMouseDown]);
-
-  useEffect(() => {
-    if (menuRef.current) {
-      setMenuRef(menuRef);
-    }
-  }, [setMenuRef]);
-
   return (
-    <section
-      className="flex-center full-size"
-      onContextMenu={handleContextMenu}
-      aria-label="context menu area"
-    >
-      <div className={styles.menu_box} ref={menuRef} hidden={menuType === null}>
-        {menuType === "background" && targetFileKey && (
-          <BackgroundMenu path={targetFileKey} closeMenu={closeMenu} />
-        )}
-        {menuType === "file" &&
-          targetFile &&
-          (currentWindow || getBackgroundWindow()) && (
-            <FileMenu
-              path={targetFile.fileKey}
-              fileName={targetFile.fileName}
-              fileType={targetFile.fileType}
-              windowKey={currentWindow?.key || getBackgroundWindow()?.key || ""}
-              closeMenu={closeMenu}
-            />
-          )}
-        {menuType === "window" && targetFileKey && (
-          <WindowMenu
-            path={targetFileKey}
-            windowType={windowType}
-            closeMenu={closeMenu}
-          />
-        )}
-      </div>
+    <>
       {children}
-    </section>
+      <div
+        ref={menuRef}
+        className={styles.menu_box}
+        style={{ display: "none" }}
+        role="menu"
+        aria-label="context menu"
+      >
+        {open ? <MenuContent closeMenu={closeMenu} /> : null}
+      </div>
+    </>
   );
+}
+
+function MenuContent({ closeMenu }: { closeMenu: () => void }) {
+  const currentWindow = useWindowStore((s) => s.currentWindow);
+  const findWindow = useWindowStore((s) => s.findWindow);
+  const getBackgroundWindow = useWindowStore((s) => s.getBackgroundWindow);
+  const highlightedFile = useFileStore((s) => s.highlightedFile);
+
+  const target = useMemo(() => {
+    if (highlightedFile) {
+      return {
+        window: findWindow(highlightedFile.windowKey),
+        file: highlightedFile,
+      };
+    }
+    const valid =
+      currentWindow && findWindow(currentWindow.key)
+        ? findWindow(currentWindow.key)
+        : getBackgroundWindow();
+    return { window: valid ?? null, file: null };
+  }, [currentWindow, findWindow, getBackgroundWindow, highlightedFile]);
+
+  if (target.file && target.window) {
+    return (
+      <FileMenu
+        path={target.file.fileKey}
+        fileName={target.file.fileName}
+        fileType={target.file.type}
+        windowKey={target.window.key}
+        closeMenu={closeMenu}
+      />
+    );
+  }
+  if (!target.window) return null;
+  if (target.window.type === WindowType.Background) {
+    return (
+      <BackgroundMenu
+        path={target.window.targetKey}
+        driveID={target.window.driveID || ""}
+        closeMenu={closeMenu}
+      />
+    );
+  }
+  if (target.window.type === WindowType.Navigator) {
+    return (
+      <WindowMenu
+        path={target.window.targetKey}
+        windowType={target.window.type}
+        closeMenu={closeMenu}
+      />
+    );
+  }
+  return null;
 }

@@ -1,8 +1,16 @@
-import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { renderHook, waitFor } from "@testing-library/react";
-import { http, HttpResponse } from "msw";
+import { HttpResponse, http } from "msw";
 import { setupServer } from "msw/node";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 import { useMkdir } from "@/domain/file-mutations";
 
 const API = "https://api.mdrive.mandacode.com";
@@ -41,7 +49,9 @@ describe("useMkdir", () => {
 
     const { result } = renderHook(() => useMkdir(), {
       wrapper: ({ children }) => (
-        <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+        <QueryClientProvider client={queryClient}>
+          {children}
+        </QueryClientProvider>
       ),
     });
 
@@ -57,7 +67,9 @@ describe("useMkdir", () => {
 
     const predicate = call?.predicate as (q: unknown) => boolean;
     expect(
-      predicate({ queryKey: [`${API}/v1/drives/${driveID}/fs/ls`, { path: "/" }] })
+      predicate({
+        queryKey: [`${API}/v1/drives/${driveID}/fs/ls`, { path: "/" }],
+      })
     ).toBe(true);
     expect(predicate({ queryKey: [`${API}/v1/drives`] })).toBe(false);
     expect(
@@ -69,8 +81,9 @@ describe("useMkdir", () => {
 
   it("does not invalidate fs queries on 401", async () => {
     server.use(
-      http.post("*/v1/drives/:id/fs/mkdir", () =>
-        new HttpResponse(null, { status: 401 })
+      http.post(
+        "*/v1/drives/:id/fs/mkdir",
+        () => new HttpResponse(null, { status: 401 })
       )
     );
 
@@ -79,11 +92,16 @@ describe("useMkdir", () => {
 
     const { result } = renderHook(() => useMkdir(), {
       wrapper: ({ children }) => (
-        <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+        <QueryClientProvider client={queryClient}>
+          {children}
+        </QueryClientProvider>
       ),
     });
 
-    result.current.mutate({ driveID: "drive-1", data: { path: "/New Folder" } });
+    result.current.mutate({
+      driveID: "drive-1",
+      data: { path: "/New Folder" },
+    });
     await waitFor(() => expect(result.current.isError).toBe(true));
     expect(invalidateSpy).not.toHaveBeenCalled();
   });
@@ -100,11 +118,16 @@ describe("useMkdir", () => {
 
     const { result } = renderHook(() => useMkdir(), {
       wrapper: ({ children }) => (
-        <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+        <QueryClientProvider client={queryClient}>
+          {children}
+        </QueryClientProvider>
       ),
     });
 
-    result.current.mutate({ driveID: "drive-1", data: { path: "/New Folder" } });
+    result.current.mutate({
+      driveID: "drive-1",
+      data: { path: "/New Folder" },
+    });
     await waitFor(() => expect(result.current.isError).toBe(true));
     expect(invalidateSpy).not.toHaveBeenCalled();
   });

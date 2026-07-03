@@ -1,16 +1,11 @@
+export * from "@/interactions/adapters/use-active";
+export * from "@/interactions/adapters/use-context-menu";
+export * from "@/interactions/adapters/use-drag";
+export * from "@/interactions/adapters/use-image-pan-zoom";
+export * from "@/interactions/adapters/use-select-box";
+export * from "@/interactions/adapters/use-window-affordance";
 export { useGlobalInteractions } from "@/interactions/bindings";
-export { resolveIid } from "@/interactions/element-id";
-export type {
-  AnyInput,
-  Iid,
-  KeyInput,
-  PointerInput,
-  WheelInput,
-} from "@/interactions/events";
-export * from "@/interactions/reducers";
-export {
-  type HoverInfo,
-  type InteractionAction,
-  type InteractionState,
-  useInteractionStore,
-} from "@/interactions/store";
+export * from "@/interactions/element-id";
+export * from "@/interactions/hit-test";
+export * from "@/interactions/store";
+export * from "@/interactions/types";

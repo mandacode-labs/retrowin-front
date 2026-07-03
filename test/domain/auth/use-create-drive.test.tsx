@@ -1,8 +1,16 @@
-import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { renderHook, waitFor } from "@testing-library/react";
-import { http, HttpResponse } from "msw";
+import { HttpResponse, http } from "msw";
 import { setupServer } from "msw/node";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 import { useCreateDrive } from "@/domain/auth";
 
 const server = setupServer();
@@ -33,7 +41,9 @@ describe("useCreateDrive", () => {
 
     const { result } = renderHook(() => useCreateDrive(), {
       wrapper: ({ children }) => (
-        <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+        <QueryClientProvider client={queryClient}>
+          {children}
+        </QueryClientProvider>
       ),
     });
 
@@ -54,9 +64,7 @@ describe("useCreateDrive", () => {
 
   it("does not invalidate on 400", async () => {
     server.use(
-      http.post("*/v1/drives", () =>
-        new HttpResponse(null, { status: 400 })
-      )
+      http.post("*/v1/drives", () => new HttpResponse(null, { status: 400 }))
     );
 
     const queryClient = makeClient();
@@ -64,7 +72,9 @@ describe("useCreateDrive", () => {
 
     const { result } = renderHook(() => useCreateDrive(), {
       wrapper: ({ children }) => (
-        <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+        <QueryClientProvider client={queryClient}>
+          {children}
+        </QueryClientProvider>
       ),
     });
 

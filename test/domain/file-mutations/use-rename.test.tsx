@@ -1,8 +1,16 @@
-import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { renderHook, waitFor } from "@testing-library/react";
-import { http, HttpResponse } from "msw";
+import { HttpResponse, http } from "msw";
 import { setupServer } from "msw/node";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 import { useRename } from "@/domain/file-mutations";
 
 const API = "https://api.mdrive.mandacode.com";
@@ -40,17 +48,22 @@ describe("useRename", () => {
 
     const { result } = renderHook(() => useRename(), {
       wrapper: ({ children }) => (
-        <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+        <QueryClientProvider client={queryClient}>
+          {children}
+        </QueryClientProvider>
       ),
     });
 
-    result.current.mutate({
+    await result.current.run({
       driveID,
       path: "/folder/file.txt",
       newName: "renamed.txt",
     });
 
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(invalidateSpy).toHaveBeenCalled();
+    await waitFor(() =>
+      expect(invalidateSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ predicate: expect.any(Function) })
+      )
+    );
   });
 });

@@ -73,6 +73,8 @@ export default memo(
         onMouseEnter={onMouseEnter}
         onMouseLeave={onMouseLeave}
         aria-label="window content"
+        data-iid={windowKey}
+        data-zone="window-content"
       >
         {canRender && (
           <ContentComponent

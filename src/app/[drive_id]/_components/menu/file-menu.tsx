@@ -1,3 +1,5 @@
+"use client";
+
 import { useCallback } from "react";
 import { useRm } from "@/domain/file-mutations";
 import { ContentTypes, getContentTypes } from "@/entities/content/extension";
@@ -24,69 +26,63 @@ export default function FileMenu({
   windowKey: string;
   closeMenu: () => void;
 }) {
-  const windows = useWindowStore((state) => state.windows);
+  const windows = useWindowStore((s) => s.windows);
   const currentWindow = windows.find((w) => w.key === windowKey);
   const driveID = currentWindow?.driveID || "";
 
-  const rmMutation = useRm();
-
-  const newWindow = useWindowStore((state) => state.newWindow);
-  const getSelectedFileKeys = useFileStore(
-    (state) => state.getSelectedFileKeys
-  );
-  const setRenamingFile = useFileStore((state) => state.setRenamingFile);
+  const rm = useRm();
+  const newWindow = useWindowStore((s) => s.newWindow);
+  const getSelectedFileKeys = useFileStore((s) => s.getSelectedFileKeys);
+  const setRenamingFile = useFileStore((s) => s.setRenamingFile);
 
   const getTargetPaths = useCallback(() => {
-    const selectedKeys = getSelectedFileKeys();
-    if (!selectedKeys.includes(path)) {
-      return [path];
-    }
-    return selectedKeys;
+    const selected = getSelectedFileKeys();
+    if (!selected.includes(path)) return [path];
+    return selected;
   }, [getSelectedFileKeys, path]);
 
   const openFile = useCallback(
     async (
-      fileType: Omit<FileType, BackendFileType.Symlink>,
-      fileName: string,
-      path: string
+      type: Omit<FileType, BackendFileType.Symlink>,
+      name: string,
+      targetPath: string
     ) => {
-      let windowType: WindowType;
-      switch (fileType) {
+      let kind: WindowType;
+      switch (type) {
         case BackendFileType.Directory:
         case VirtualFileType.Root:
         case VirtualFileType.Home:
-          windowType = WindowType.Navigator;
+          kind = WindowType.Navigator;
           break;
         case BackendFileType.Object:
         case BackendFileType.Regular: {
-          const contentType = getContentTypes(fileName);
-          switch (contentType) {
+          const ct = getContentTypes(name);
+          switch (ct) {
             case ContentTypes.Image:
-              windowType = WindowType.Image;
+              kind = WindowType.Image;
               break;
             case ContentTypes.Video:
-              windowType = WindowType.Video;
+              kind = WindowType.Video;
               break;
             case ContentTypes.Audio:
-              windowType = WindowType.Audio;
+              kind = WindowType.Audio;
               break;
             default:
-              windowType = WindowType.Other;
+              kind = WindowType.Other;
               break;
           }
           break;
         }
         case VirtualFileType.Upload:
-          windowType = WindowType.Uploader;
+          kind = WindowType.Uploader;
           break;
         default:
-          windowType = WindowType.Other;
-          break;
+          kind = WindowType.Other;
       }
       newWindow({
-        targetKey: path,
-        type: windowType,
-        title: fileName,
+        targetKey: targetPath,
+        type: kind,
+        title: name,
         driveID,
       });
     },
@@ -95,8 +91,8 @@ export default function FileMenu({
 
   const handleOpen = useCallback(async () => {
     closeMenu();
-    openFile(fileType, fileName, path);
-  }, [closeMenu, path, fileName, fileType, openFile]);
+    await openFile(fileType, fileName, path);
+  }, [closeMenu, fileName, fileType, path, openFile]);
 
   const handleRename = useCallback(() => {
     closeMenu();
@@ -106,18 +102,10 @@ export default function FileMenu({
   const handleDownload = useCallback(async () => {
     closeMenu();
     try {
-      const result = await presignDownload(
-        driveID,
-        { path },
-        { credentials: "include" }
-      );
-      if (result.status !== 200 || !result.data?.url) {
-        return;
-      }
+      const result = await presignDownload(driveID, { path });
+      if (result.status !== 200 || !result.data?.url) return;
       const response = await fetch(result.data.url);
-      if (!response.ok) {
-        return;
-      }
+      if (!response.ok) return;
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -134,16 +122,13 @@ export default function FileMenu({
 
   const handleDelete = useCallback(async () => {
     closeMenu();
+    const targets = getTargetPaths();
     try {
-      const paths = getTargetPaths();
-      await rmMutation.mutateAsync({
-        driveID,
-        data: { paths, recursive: true },
-      });
-    } catch (error) {
-      console.error("[FileMenu] delete failed:", error);
+      await rm.run({ driveID, data: { paths: targets, recursive: true } });
+    } catch {
+      // useRm surfaces the failure via the toast; menu is already closed
     }
-  }, [closeMenu, getTargetPaths, driveID, rmMutation]);
+  }, [closeMenu, getTargetPaths, driveID, rm]);
 
   const handleInfo = useCallback(() => {
     closeMenu();

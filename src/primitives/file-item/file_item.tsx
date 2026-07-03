@@ -3,6 +3,7 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { FileType } from "@/entities/file";
 import {
+  BackendFileType,
   type FileIconType,
   getIconType,
   getWindowType,
@@ -175,6 +176,10 @@ export default memo(function FileItem({
         className={`${styles.item_wrapper}`}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
+        data-iid={serialKey}
+        data-zone={
+          type === BackendFileType.Directory ? "folder-target" : "file-item"
+        }
         style={{
           backgroundColor:
             (selectedFileSerials.includes(serialKey) &&

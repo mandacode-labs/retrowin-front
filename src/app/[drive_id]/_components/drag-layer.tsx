@@ -1,224 +1,93 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+"use client";
+
+import { useEffect, useRef } from "react";
 import { useMv } from "@/domain/file-mutations";
-import { BackendFileType, isDragTarget } from "@/entities/file";
-import { WindowType } from "@/entities/window";
-import { useEventStore, useFileStore, useWindowStore } from "@/infra/stores";
+import { useFileStore, useWindowStore } from "@/infra/stores";
 import { parseSerialKey } from "@/infra/stores/serial-key";
+import { useDrag } from "@/interactions";
 import styles from "./drag-layer.module.css";
 
-export default function DragFileContainer({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  const [start, setStart] = useState({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = useState(false);
-  const [isDraggingReady, setIsDraggingReady] = useState(false);
-  const [displayDraggingElements, setDisplayDraggingElements] = useState(false);
-  const [pointerMoved, setPointerMoved] = useState(false);
+/**
+ * Pure presentational ghost for an active drag. The actual drag-and-drop
+ * state machine, hit-testing, and pointer pipeline live in
+ * `interactions/store.ts` + `interactions/bindings.tsx`. This component
+ * only:
+ *   - subscribes to the drag phase,
+ *   - commits the chosen `sources` (selected files) into the store
+ *     once the phase turns into `dropping`,
+ *   - and renders a tracking ghost positioned at the latest pointer.
+ *
+ * When the drop completes, it executes the mv mutation and resets
+ * the interaction store.
+ */
+export default function DragLayer({ children }: { children: React.ReactNode }) {
+  const drag = useDrag();
+  const ghostRef = useRef<HTMLDivElement>(null);
+  const mv = useMv();
+  const unselectAllFiles = useFileStore((s) => s.unselectAllFiles);
+  const selectedFileSerials = useFileStore((s) => s.selectedFileSerials);
+  const currentWindow = useWindowStore((s) => s.currentWindow);
+  const findWindow = useWindowStore((s) => s.findWindow);
 
-  const draggingFileRef = useRef<HTMLDivElement>(null);
-
-  const currentWindow = useWindowStore((state) => state.currentWindow);
-  const menuRef = useFileStore((state) => state.menuRef);
-  const highlightedFile = useFileStore((state) => state.highlightedFile);
-  const selectedFileSerials = useFileStore(
-    (state) => state.selectedFileSerials
-  );
-  const fileIconRefs = useFileStore((state) => state.fileIconRefs);
-  const pressedKeys = useEventStore((state) => state.pressedKeys);
-
-  const findWindow = useWindowStore((state) => state.findWindow);
-  const isFileKeySelected = useFileStore((state) => state.isFileKeySelected);
-  const selectFile = useFileStore((state) => state.selectFile);
-  const unselectAllFiles = useFileStore((state) => state.unselectAllFiles);
-
-  const mvMutation = useMv();
-
-  const dragFileStart = useCallback(
-    (e: MouseEvent) => {
-      if (menuRef?.current?.contains(e.target as Node)) return;
-
-      if (!highlightedFile) return;
-      else if (highlightedFile?.ref.current?.contains(e.target as Node)) {
-        if (
-          !isFileKeySelected(highlightedFile.fileKey) &&
-          !pressedKeys.includes("Shift")
-        ) {
-          unselectAllFiles();
-        }
-        selectFile(highlightedFile.fileKey, highlightedFile.windowKey);
-      }
-      setPointerMoved(false);
-      setStart({ x: e.clientX, y: e.clientY });
-      setIsDraggingReady(true);
-    },
-    [
-      highlightedFile,
-      isFileKeySelected,
-      menuRef,
-      pressedKeys,
-      selectFile,
-      unselectAllFiles,
-    ]
-  );
-
-  const createDraggingFile = useCallback(
-    (e: MouseEvent) => {
-      if (e.button !== 0) return;
-      if (
-        highlightedFile?.ref.current &&
-        isDraggingReady &&
-        !isDragging &&
-        Math.abs(e.clientX - start.x) > 5 &&
-        Math.abs(e.clientY - start.y) > 5
-      ) {
-        document.body.style.cursor = "grabbing";
-        setIsDragging(true);
-        setDisplayDraggingElements(true);
-        setPointerMoved(true);
-
-        let count = 0;
-        let width = 0;
-        selectedFileSerials.forEach((serialKey) => {
-          const fileIconRef = fileIconRefs.get(serialKey);
-          if (fileIconRef?.current && count < 4) {
-            const fileRect = fileIconRef.current.getBoundingClientRect();
-            const clone = fileIconRef.current.cloneNode(true) as HTMLElement;
-            clone.style.position = "absolute";
-            clone.style.left = `${-fileRect.width / 2}px`;
-            clone.style.top = `${-fileRect.height - count * 5}px`;
-            clone.style.zIndex = `${-count}`;
-            draggingFileRef.current?.appendChild(clone);
-
-            if (count === 0) {
-              width = fileRect.width;
-            }
-            count++;
-          }
-        });
-
-        const countElement = document.createElement("div");
-        countElement.innerText = `${selectedFileSerials.length}`;
-        countElement.className = styles.dragging_file_count;
-        countElement.style.left = `${width / 2 - 12}px`;
-        draggingFileRef.current?.appendChild(countElement);
-      }
-    },
-    [
-      fileIconRefs,
-      highlightedFile?.ref,
-      isDragging,
-      isDraggingReady,
-      selectedFileSerials,
-      start.x,
-      start.y,
-    ]
-  );
-
-  const dragFile = useCallback(
-    (e: MouseEvent) => {
-      if (!isDragging) return;
-      if (!draggingFileRef.current) return;
-      e.preventDefault();
-      draggingFileRef.current.style.left = `${e.clientX}px`;
-      draggingFileRef.current.style.top = `${e.clientY}px`;
-    },
-    [isDragging]
-  );
-
-  const dragFileEnd = useCallback(async () => {
-    setIsDragging(false);
-    setIsDraggingReady(false);
-    setDisplayDraggingElements(false);
-    if (!draggingFileRef.current) return;
-    document.body.style.cursor = "default";
-    draggingFileRef.current.innerHTML = "";
-    document.body.style.cursor = "default";
-    let targetPath: string | null = null;
-
-    if (currentWindow?.windowRef.current) {
-      const window = findWindow(currentWindow.key);
-      if (
-        window &&
-        (window.type === WindowType.Background ||
-          window.type === WindowType.Navigator)
-      ) {
-        targetPath = window.targetKey;
-      }
+  useEffect(() => {
+    if (drag.phase === "dragging" && drag.last && ghostRef.current) {
+      ghostRef.current.style.left = `${drag.last.x}px`;
+      ghostRef.current.style.top = `${drag.last.y}px`;
     }
+  }, [drag.phase, drag.last]);
 
-    if (highlightedFile && isDragTarget(highlightedFile.type)) {
-      targetPath = highlightedFile.fileKey;
-    } else if (highlightedFile?.type === BackendFileType.Symlink) {
-      targetPath = null;
-    } else if (highlightedFile) {
-      targetPath = null;
-    }
+  useEffect(() => {
+    if (drag.phase !== "dropping") return;
+    const target = drag.target;
+    if (!target) return;
+    const driveID = findWindow(currentWindow?.key || "")?.driveID || "";
+    if (!driveID) return;
+    const sources = selectedFileSerials
+      .map((s) => parseSerialKey(s).fileKey)
+      .filter((p) => p !== target);
 
-    if (targetPath && pointerMoved) {
-      const filePaths = selectedFileSerials
-        .map((serialKey) => parseSerialKey(serialKey).fileKey)
-        .filter((p) => p !== targetPath);
-
-      if (filePaths.length > 0) {
-        const window = findWindow(currentWindow?.key || "");
-        const driveID = window?.driveID || "";
-
-        await mvMutation.mutateAsync({
-          driveID,
-          data: { sources: filePaths, destination: targetPath },
-        });
-      }
-
+    if (sources.length === 0) {
       unselectAllFiles();
+      return;
     }
+
+    mv.run({ driveID, data: { sources, destination: target } }).finally(() =>
+      unselectAllFiles()
+    );
   }, [
+    drag.phase,
+    drag.target,
+    selectedFileSerials,
     currentWindow,
     findWindow,
-    highlightedFile,
-    pointerMoved,
-    selectedFileSerials,
+    mv,
     unselectAllFiles,
-    mvMutation,
   ]);
 
-  useEffect(() => {
-    document.addEventListener("mousedown", dragFileStart);
-    return () => {
-      document.removeEventListener("mousedown", dragFileStart);
-    };
-  }, [dragFileStart]);
-
-  useEffect(() => {
-    document.addEventListener("mousemove", createDraggingFile);
-    return () => {
-      document.removeEventListener("mousemove", createDraggingFile);
-    };
-  }, [createDraggingFile]);
-
-  useEffect(() => {
-    document.addEventListener("mousemove", dragFile);
-    return () => {
-      document.removeEventListener("mousemove", dragFile);
-    };
-  }, [dragFile]);
-
-  useEffect(() => {
-    document.addEventListener("mouseup", dragFileEnd);
-    return () => {
-      document.removeEventListener("mouseup", dragFileEnd);
-    };
-  }, [dragFileEnd]);
+  const isDragging = drag.phase === "dragging";
 
   return (
-    <div className="full-size">
-      <div
-        ref={draggingFileRef}
-        hidden={!displayDraggingElements}
-        className={`${styles.dragging_files}`}
-      ></div>
+    <>
       {children}
-    </div>
+      <div
+        ref={ghostRef}
+        aria-hidden="true"
+        style={{
+          position: "fixed",
+          left: 0,
+          top: 0,
+          pointerEvents: "none",
+          display: isDragging ? "block" : "none",
+          zIndex: 1000,
+        }}
+        className={styles.dragging_files}
+      >
+        {isDragging ? (
+          <div className={styles.dragging_file_count}>
+            {selectedFileSerials.length}
+          </div>
+        ) : null}
+      </div>
+    </>
   );
 }

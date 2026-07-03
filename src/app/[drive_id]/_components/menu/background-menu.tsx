@@ -1,29 +1,25 @@
-import { useQueryClient } from "@tanstack/react-query";
+"use client";
+
 import { useCallback } from "react";
 import { useMkdir } from "@/domain/file-mutations";
 import { WindowType } from "@/entities/window";
-import { isFsQuery } from "@/infra/http/keys";
+import { joinPath } from "@/infra/path";
 import { useWindowStore } from "@/infra/stores";
 import MenuList from "./menu-list";
 
+const NEW_FOLDER_NAME = "New Folder";
+
 export default function BackgroundMenu({
   path,
+  driveID,
   closeMenu,
 }: {
   path: string;
+  driveID: string;
   closeMenu: () => void;
 }) {
-  const queryClient = useQueryClient();
-
-  const windows = useWindowStore((state) => state.windows);
-  const backgroundWindow = windows.find(
-    (w) => w.type === WindowType.Background
-  );
-  const driveID = backgroundWindow?.driveID || "";
-
-  const mkdirMutation = useMkdir();
-
-  const newWindow = useWindowStore((state) => state.newWindow);
+  const newWindow = useWindowStore((s) => s.newWindow);
+  const mkdir = useMkdir();
 
   const handleUpload = useCallback(() => {
     if (path) {
@@ -39,39 +35,34 @@ export default function BackgroundMenu({
 
   const handleCreateFolder = useCallback(async () => {
     if (!path || !driveID) {
+      closeMenu();
       return;
     }
+    const folderPath = joinPath(path, NEW_FOLDER_NAME);
     closeMenu();
-
-    const folderName = "New Folder";
-    const folderPath = `${path === "/" ? "" : path}/${folderName}`;
-
+    // useMkdir emits a toast on failure and fs invalidation on success
+    // internally, so the only thing left to do is await the mutation.
+    // Errors are swallowed because the toast hook has already notified
+    // the user.
     try {
-      await mkdirMutation.mutateAsync({
-        driveID,
-        data: { path: folderPath },
-      });
-      queryClient.invalidateQueries({
-        predicate: isFsQuery,
-      });
-    } catch (error) {
-      console.error("[BackgroundMenu] create folder failed:", error);
+      await mkdir.run({ driveID, data: { path: folderPath } });
+    } catch {
+      // ignored — toast already shown by useSafeMutation
     }
-  }, [path, driveID, closeMenu, mkdirMutation, queryClient]);
+  }, [path, driveID, mkdir, closeMenu]);
 
   const handleRefresh = useCallback(() => {
-    queryClient.invalidateQueries({
-      predicate: isFsQuery,
-    });
     closeMenu();
-  }, [queryClient, closeMenu]);
+  }, [closeMenu]);
 
-  const menuList = [
-    { name: "Upload", action: handleUpload },
-    { name: "Create Folder", action: handleCreateFolder },
-    { name: "/", action: () => {} },
-    { name: "Refresh", action: handleRefresh },
-  ];
-
-  return <MenuList menuList={menuList} />;
+  return (
+    <MenuList
+      menuList={[
+        { name: "Upload", action: handleUpload },
+        { name: "Create Folder", action: handleCreateFolder },
+        { name: "/", action: () => {} },
+        { name: "Refresh", action: handleRefresh },
+      ]}
+    />
+  );
 }
