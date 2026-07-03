@@ -9,5 +9,5 @@
 export interface DirEntry {
   inodeID?: string;
   name?: string;
-  type?: string;
+  kind?: string;
 }

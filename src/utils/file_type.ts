@@ -8,7 +8,7 @@ import { ContentTypes, getContentTypes } from "@/utils/content_type";
  * Convert a DirEntry.type string (e.g. "directory", "regular") to a FileType.
  */
 export function getFileTypeFromEntry(entry: DirEntry): FileType {
-  switch (entry.type) {
+  switch (entry.kind) {
     case BackendFileType.Directory:
       return BackendFileType.Directory;
     case BackendFileType.Symlink:

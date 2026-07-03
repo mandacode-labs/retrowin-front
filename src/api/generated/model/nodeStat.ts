@@ -7,24 +7,17 @@
  */
 
 /**
- * POSIX stat(2) / lstat(2) result. Mode is an octal bitmask
- * (chmod(2) bits | S_IFMT); ino is the inode id; the four
- * timestamps follow ext4 semantics. nlink is 0 for symlinks
- * and other special nodes.
+ * Inode metadata. Permission checks are not modeled here:
+ * OpenFGA owns access control across drives, and S3 (where
+ * applicable) owns per-object ACLs.
  */
 export interface NodeStat {
   type: string;
   size: number;
-  /** POSIX permission bits and file type (chmod(2) bits | S_IFMT). Unsigned 32-bit to match st_mode and avoid the gosec G115 signed-overflow boundary. */
-  mode: number;
   /** POSIX st_nlink (hardlink count). Unsigned 32-bit to match the internal representation. */
   nlink: number;
   /** POSIX st_ino (inode id). */
   ino: string;
-  /** POSIX st_uid (owning user). */
-  uid?: string;
-  /** POSIX st_gid (owning group). */
-  gid?: string;
   /** POSIX st_atime. */
   atime: string;
   /** POSIX st_mtime. */

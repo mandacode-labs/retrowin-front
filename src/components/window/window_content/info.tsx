@@ -1,6 +1,5 @@
 import { useDriveStat } from "@/api/hooks";
 import { useWindowStore } from "@/store/window.store";
-import { isDirectory, isSymlink } from "@/types/file";
 import styles from "./info.module.css";
 
 function formatBytes(bytes: number): string {
@@ -47,11 +46,7 @@ export default function InfoViewer({
     );
   }
 
-  const fileType = isDirectory(nodeStat.mode)
-    ? "directory"
-    : isSymlink(nodeStat.mode)
-      ? "symlink"
-      : "file";
+  const fileType = nodeStat.type;
 
   return (
     <div className={`full-size ${styles.container}`}>
@@ -68,20 +63,6 @@ export default function InfoViewer({
           <tr>
             <td className={styles.label}>type</td>
             <td className={styles.value}>{fileType}</td>
-          </tr>
-          <tr>
-            <td className={styles.label}>mode</td>
-            <td className={styles.value}>
-              {(nodeStat.mode ?? 0).toString(8).padStart(4, "0")}
-            </td>
-          </tr>
-          <tr>
-            <td className={styles.label}>uid</td>
-            <td className={styles.value}>{nodeStat.uid ?? "-"}</td>
-          </tr>
-          <tr>
-            <td className={styles.label}>gid</td>
-            <td className={styles.value}>{nodeStat.gid ?? "-"}</td>
           </tr>
           <tr>
             <td className={styles.label}>inode</td>
