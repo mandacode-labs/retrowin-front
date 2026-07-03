@@ -3,4 +3,4 @@ export {
   getGetDriveStorageQueryOptions,
   getListDeletedDrivesQueryOptions,
   getListDrivesQueryOptions,
-} from "@/core/http";
+} from "@/infra/http";

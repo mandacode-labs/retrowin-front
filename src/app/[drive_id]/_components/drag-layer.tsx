@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { useFileStore } from "@/core/stores";
-import { useDrag, useIsDragging } from "@/runtime";
+import { useFileStore } from "@/infra/stores";
+import { useDrag, useIsDragging } from "@/interact";
 import styles from "./drag-layer.module.css";
 
 /**

@@ -12,8 +12,8 @@
  * store.
  */
 
-import type { DirContent, DirEntry } from "@/core/http/types";
 import { BackendFileType } from "@/entities/file";
+import type { DirContent, DirEntry } from "@/infra/http/types";
 
 export type DirNode = {
   name: string;

@@ -9,10 +9,10 @@ import {
   MdZoomIn,
   MdZoomOut,
 } from "react-icons/md";
-import { useLs, usePresignDownload } from "@/core/http";
-import type { DirEntry } from "@/core/http/generated/model/dirEntry";
-import { useWindowStore } from "@/core/stores";
 import { ContentTypes, getContentTypes } from "@/entities/content/extension";
+import { useLs, usePresignDownload } from "@/infra/http";
+import type { DirEntry } from "@/infra/http/generated/model/dirEntry";
+import { useWindowStore } from "@/infra/stores";
 import mediaStyles from "./media.module.css";
 
 const ZOOM_STEP = 0.25;

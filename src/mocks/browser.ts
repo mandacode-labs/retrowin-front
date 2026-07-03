@@ -2,7 +2,7 @@
 
 import { setupWorker } from "msw/browser";
 
-import { getMdriveAPIMock } from "@/core/http/generated/index.msw";
+import { getMdriveAPIMock } from "@/infra/http/generated/index.msw";
 import { customHandlers } from "@/mocks/handlers";
 
 /**

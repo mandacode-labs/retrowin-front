@@ -3,8 +3,8 @@ import {
   useMutation,
   useQueryClient,
 } from "@tanstack/react-query";
-import { isFsQuery } from "@/core/http/keys";
 import { useToast } from "@/domain/toast";
+import { isFsQuery } from "@/infra/http/keys";
 
 type Invalidate = "fs" | "drives" | "none";
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createWindowKey } from "@/core/random-keys";
+import { createWindowKey } from "@/infra/random-keys";
 
 describe("createWindowKey", () => {
   it("produces a non-empty unique identifier", () => {

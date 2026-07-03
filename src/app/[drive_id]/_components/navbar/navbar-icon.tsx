@@ -1,8 +1,8 @@
 import { useCallback } from "react";
-import { useWindowStore } from "@/core/stores";
+import FileIcon from "@/components/file-icon/file_icon";
 import { FileIconType } from "@/entities/file";
 import { WindowType } from "@/entities/window";
-import FileIcon from "@/primitives/file-icon/file_icon";
+import { useWindowStore } from "@/infra/stores";
 import styles from "./navbar-icon.module.css";
 
 export default function NavbarIcon({

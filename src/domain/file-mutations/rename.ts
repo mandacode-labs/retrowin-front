@@ -1,5 +1,5 @@
-import { dirname } from "@/core/path";
 import { useMv } from "@/domain/file-mutations/mv";
+import { dirname } from "@/infra/path";
 
 export interface RenameVars {
   driveID: string;

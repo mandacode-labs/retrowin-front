@@ -4,8 +4,8 @@ import {
   getCompleteUploadMutationOptions,
   getInitiateUploadMutationOptions,
   stat as statRequest,
-} from "@/core/http";
-import { joinPath } from "@/core/path";
+} from "@/infra/http";
+import { joinPath } from "@/infra/path";
 
 export type UploadStatus =
   | "queued"

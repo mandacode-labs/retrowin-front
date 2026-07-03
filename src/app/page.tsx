@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { XPImageIcons } from "@/components/xp-icons/xp_image_icons";
 import {
   login,
   useCreateDrive,
@@ -9,7 +10,6 @@ import {
   useLogout,
   useMe,
 } from "@/domain/auth";
-import { XPImageIcons } from "@/primitives/xp-icons/xp_image_icons";
 import styles from "./page.module.css";
 
 export default function SystemSelectionPage() {

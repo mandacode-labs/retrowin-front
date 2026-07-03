@@ -1,4 +1,4 @@
-import { normalize } from "@/core/path";
+import { normalize } from "@/infra/path";
 
 /**
  * `wouldCycle` returns true when moving one or more sources into

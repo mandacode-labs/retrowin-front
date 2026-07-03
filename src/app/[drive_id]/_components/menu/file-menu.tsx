@@ -1,8 +1,6 @@
 "use client";
 
 import { useCallback } from "react";
-import { presignDownload } from "@/core/http";
-import { useFileStore, useWindowStore } from "@/core/stores";
 import { useRm } from "@/domain/file-mutations";
 import { ContentTypes, getContentTypes } from "@/entities/content/extension";
 import {
@@ -11,6 +9,8 @@ import {
   VirtualFileType,
 } from "@/entities/file";
 import { WindowType } from "@/entities/window";
+import { presignDownload } from "@/infra/http";
+import { useFileStore, useWindowStore } from "@/infra/stores";
 import MenuList from "./menu-list";
 
 export default function FileMenu({

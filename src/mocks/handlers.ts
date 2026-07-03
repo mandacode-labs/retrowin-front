@@ -1,5 +1,5 @@
 import { HttpResponse, http } from "msw";
-import type { User } from "@/core/http/types";
+import type { User } from "@/infra/http/types";
 import {
   mockCreateDrive,
   mockDeleteDrive,

@@ -2,7 +2,7 @@
 
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Suspense, useEffect, useState } from "react";
-import { installFetchCredentials, queryClient } from "@/core/http";
+import { installFetchCredentials, queryClient } from "@/infra/http";
 import { startMockService } from "@/mocks";
 
 /**

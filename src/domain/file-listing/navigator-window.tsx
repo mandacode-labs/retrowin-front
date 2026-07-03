@@ -1,5 +1,5 @@
-import { useWindowStore } from "@/core/stores";
-import FileContainer from "@/primitives/file-container/file_container";
+import FileContainer from "@/components/file-container/file_container";
+import { useWindowStore } from "@/infra/stores";
 import styles from "./navigator-window.module.css";
 
 export default function Navigator({

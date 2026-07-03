@@ -1,10 +1,10 @@
 "use client";
 
 import { useCallback } from "react";
-import { joinPath } from "@/core/path";
-import { useWindowStore } from "@/core/stores";
 import { useMkdir } from "@/domain/file-mutations";
 import { WindowType } from "@/entities/window";
+import { joinPath } from "@/infra/path";
+import { useWindowStore } from "@/infra/stores";
 import MenuList from "./menu-list";
 
 export default function WindowMenu({

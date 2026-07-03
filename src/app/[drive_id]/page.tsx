@@ -9,13 +9,14 @@ import Navbar from "@/app/[drive_id]/_components/navbar/navbar";
 import SelectBoxLayer from "@/app/[drive_id]/_components/select-box-layer";
 import Window from "@/app/[drive_id]/_components/window-stack/window";
 import { BindingsClient } from "@/app/[drive_id]/_lib/bindings-client";
-import { createWindowKey } from "@/core/random-keys";
-import { useWindowStore } from "@/core/stores";
+import FileContainer from "@/components/file-container/file_container";
 import { useMe } from "@/domain/auth";
 import { useDrive } from "@/domain/file-listing";
 import { ToastContainer } from "@/domain/toast";
 import { WindowType } from "@/entities/window";
-import FileContainer from "@/primitives/file-container/file_container";
+import { createWindowKey } from "@/infra/random-keys";
+import { useWindowStore } from "@/infra/stores";
+import { InteractionProvider } from "@/interact/runtime";
 import styles from "./page.module.css";
 
 export default function DrivePage() {
@@ -84,38 +85,40 @@ export default function DrivePage() {
 
   return (
     <div className={`${styles.page} flex-center full-size`} role="application">
-      <BindingsClient />
-      <Background>
-        <MenuBox>
-          <SelectBoxLayer>
-            <DragLayer>
-              <section
-                ref={backgroundWindowRef}
-                className={`full-size flex-center ${styles.background_window}`}
-                onMouseEnter={onMouseEnter}
-                aria-label="background workspace"
-                data-iid="workspace"
-                data-zone="background"
-              >
-                <FileContainer
-                  windowKey={backgroundWindowKey}
-                  driveID={driveID}
-                  path="/"
-                  upload
-                  backgroundFile
-                />
-              </section>
-              {windows
-                .filter((w) => w.type !== WindowType.Background)
-                .map((window) => (
-                  <Window key={window.key} windowKey={window.key} />
-                ))}
-            </DragLayer>
-          </SelectBoxLayer>
-        </MenuBox>
-      </Background>
-      <Navbar windows={windows} driveID={driveID} />
-      <ToastContainer />
+      <InteractionProvider>
+        <BindingsClient />
+        <Background>
+          <MenuBox>
+            <SelectBoxLayer>
+              <DragLayer>
+                <section
+                  ref={backgroundWindowRef}
+                  className={`full-size flex-center ${styles.background_window}`}
+                  onMouseEnter={onMouseEnter}
+                  aria-label="background workspace"
+                  data-iid="workspace"
+                  data-zone="background"
+                >
+                  <FileContainer
+                    windowKey={backgroundWindowKey}
+                    driveID={driveID}
+                    path="/"
+                    upload
+                    backgroundFile
+                  />
+                </section>
+                {windows
+                  .filter((w) => w.type !== WindowType.Background)
+                  .map((window) => (
+                    <Window key={window.key} windowKey={window.key} />
+                  ))}
+              </DragLayer>
+            </SelectBoxLayer>
+          </MenuBox>
+        </Background>
+        <Navbar windows={windows} driveID={driveID} />
+        <ToastContainer />
+      </InteractionProvider>
     </div>
   );
 }

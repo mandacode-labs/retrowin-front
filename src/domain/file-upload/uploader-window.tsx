@@ -1,9 +1,9 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import { useWindowStore } from "@/core/stores";
+import { XPImageIcons } from "@/components/xp-icons/xp_image_icons";
 import { useUploadManager } from "@/domain/file-upload";
-import { XPImageIcons } from "@/primitives/xp-icons/xp_image_icons";
+import { useWindowStore } from "@/infra/stores";
 import styles from "./uploader-window.module.css";
 
 interface UploaderProps {

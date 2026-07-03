@@ -1,1 +1,1 @@
-export * from "@/core/http/generated/model/drive";
+export * from "@/infra/http/generated/model/drive";

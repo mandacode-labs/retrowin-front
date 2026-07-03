@@ -1,8 +1,8 @@
 import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { getWindowConfig } from "@/config/window";
-import { useWindowStore } from "@/core/stores";
 import { WindowType } from "@/entities/window";
-import { useWindowAffordance } from "@/runtime/adapters/use-window-affordance";
+import { useWindowStore } from "@/infra/stores";
+import { useWindowAffordance } from "@/interact/adapters/use-window-affordance";
 import styles from "./window.module.css";
 import WindowContent from "./window-content-router";
 import WindowHeader from "./window-header";

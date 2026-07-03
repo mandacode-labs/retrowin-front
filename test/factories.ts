@@ -1,5 +1,5 @@
 import { faker } from "@faker-js/faker";
-import type { DirEntry, Drive, User } from "@/core/http/types";
+import type { DirEntry, Drive, User } from "@/infra/http/types";
 
 export function makeUser(overrides: Partial<User> = {}): User {
   return {

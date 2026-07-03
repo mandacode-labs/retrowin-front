@@ -1,6 +1,6 @@
-import { safeFetch } from "@/core/http";
-import type { MkdirBody } from "@/core/http/types";
 import { useSafeMutation } from "@/domain/file-mutations/safe";
+import { safeFetch } from "@/infra/http";
+import type { MkdirBody } from "@/infra/http/types";
 
 export interface MkdirVars {
   driveID: string;

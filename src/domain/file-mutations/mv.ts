@@ -1,7 +1,7 @@
-import { safeFetch } from "@/core/http";
-import type { MvBody } from "@/core/http/types";
 import { partitionCycled } from "@/domain/file-mutations/cycle";
 import { useSafeMutation } from "@/domain/file-mutations/safe";
+import { safeFetch } from "@/infra/http";
+import type { MvBody } from "@/infra/http/types";
 
 export interface MvVars {
   driveID: string;

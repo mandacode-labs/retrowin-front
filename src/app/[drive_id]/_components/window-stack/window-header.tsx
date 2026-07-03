@@ -1,6 +1,6 @@
 import { memo } from "react";
 import { MdNavigateBefore, MdNavigateNext } from "react-icons/md";
-import CircularLoader from "@/primitives/circular-loader/circular_loader";
+import CircularLoader from "@/components/circular-loader/circular_loader";
 import styles from "./window-header.module.css";
 import WindowHeaderIcon from "./window-header-icon";
 

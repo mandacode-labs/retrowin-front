@@ -16,12 +16,10 @@
   },
   "dependencies": {
     "@tanstack/react-query": "^5.101.0",
-    "@xstate/react": "^5.0.5",
     "next": "^16.2.7",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "react-icons": "^5.6.0",
-    "xstate": "^5.32.4",
     "zustand": "^5.0.14"
   },
   "devDependencies": {

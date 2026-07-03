@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { basename, dirname, joinPath, normalize } from "@/core/path";
+import { basename, dirname, joinPath, normalize } from "@/infra/path";
 
 describe("path helpers", () => {
   it("joins root and child", () => {
