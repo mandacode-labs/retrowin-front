@@ -8,8 +8,8 @@ import {
   useDrives,
   useLogout,
   useMe,
-} from "@/api/hooks";
-import { XPImageIcons } from "@/components/icons/xp_image_icons";
+} from "@/domain/auth";
+import { XPImageIcons } from "@/primitives/xp-icons/xp_image_icons";
 import styles from "./page.module.css";
 
 export default function SystemSelectionPage() {
@@ -188,11 +188,15 @@ export default function SystemSelectionPage() {
             </div>
           ) : (
             <div className={styles.user_tiles}>
-              {drives.map((drive) => (
+              {drives
+                .filter((drive): drive is typeof drive & { id: string } =>
+                  Boolean(drive.id)
+                )
+                .map((drive) => (
                 <button
                   key={drive.id}
                   className={styles.user_tile}
-                  onClick={() => drive.id && handleDriveSelect(drive.id)}
+                  onClick={() => handleDriveSelect(drive.id)}
                   type="button"
                   aria-label={`Select ${drive.name}`}
                 >

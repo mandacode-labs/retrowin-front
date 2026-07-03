@@ -1,5 +1,4 @@
-import type { WindowConfig } from "@/types/window";
-import { WindowType } from "@/types/window";
+import { type WindowConfig, WindowType } from "@/entities/window";
 
 const windowConfigs: Record<WindowType, WindowConfig> = {
   [WindowType.Background]: {

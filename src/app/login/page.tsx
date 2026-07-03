@@ -1,12 +1,11 @@
 "use client";
 
 import { useEffect } from "react";
-
-const API_BASE = "https://api.mdrive.mandacode.com";
+import { API_BASE_URL } from "@/infra/http";
 
 export default function LoginPage() {
   useEffect(() => {
-    const url = new URL(`${API_BASE}/auth/login`);
+    const url = new URL(`${API_BASE_URL}/auth/login`);
     url.searchParams.set(
       "redirect_uri",
       new URL("/", window.location.origin).toString()

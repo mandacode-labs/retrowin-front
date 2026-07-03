@@ -1,0 +1,77 @@
+import { useQueryClient } from "@tanstack/react-query";
+import { useCallback } from "react";
+import { useMkdir } from "@/domain/file-mutations";
+import { WindowType } from "@/entities/window";
+import { isFsQuery } from "@/infra/http/keys";
+import { useWindowStore } from "@/infra/stores";
+import MenuList from "./menu-list";
+
+export default function BackgroundMenu({
+  path,
+  closeMenu,
+}: {
+  path: string;
+  closeMenu: () => void;
+}) {
+  const queryClient = useQueryClient();
+
+  const windows = useWindowStore((state) => state.windows);
+  const backgroundWindow = windows.find(
+    (w) => w.type === WindowType.Background
+  );
+  const driveID = backgroundWindow?.driveID || "";
+
+  const mkdirMutation = useMkdir();
+
+  const newWindow = useWindowStore((state) => state.newWindow);
+
+  const handleUpload = useCallback(() => {
+    if (path) {
+      newWindow({
+        targetKey: path,
+        type: WindowType.Uploader,
+        title: "Uploader",
+        driveID,
+      });
+      closeMenu();
+    }
+  }, [path, driveID, newWindow, closeMenu]);
+
+  const handleCreateFolder = useCallback(async () => {
+    if (!path || !driveID) {
+      return;
+    }
+    closeMenu();
+
+    const folderName = "New Folder";
+    const folderPath = `${path === "/" ? "" : path}/${folderName}`;
+
+    try {
+      await mkdirMutation.mutateAsync({
+        driveID,
+        data: { path: folderPath },
+      });
+      queryClient.invalidateQueries({
+        predicate: isFsQuery,
+      });
+    } catch (error) {
+      console.error("[BackgroundMenu] create folder failed:", error);
+    }
+  }, [path, driveID, closeMenu, mkdirMutation, queryClient]);
+
+  const handleRefresh = useCallback(() => {
+    queryClient.invalidateQueries({
+      predicate: isFsQuery,
+    });
+    closeMenu();
+  }, [queryClient, closeMenu]);
+
+  const menuList = [
+    { name: "Upload", action: handleUpload },
+    { name: "Create Folder", action: handleCreateFolder },
+    { name: "/", action: () => {} },
+    { name: "Refresh", action: handleRefresh },
+  ];
+
+  return <MenuList menuList={menuList} />;
+}

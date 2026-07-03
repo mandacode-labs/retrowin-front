@@ -1,6 +1,6 @@
 import { setupWorker } from "msw/browser";
 
-import { getMdriveAPIMock } from "@/api/generated/index.msw";
+import { getMdriveAPIMock } from "@/infra/http/generated/index.msw";
 
 const worker = setupWorker(...getMdriveAPIMock());
 

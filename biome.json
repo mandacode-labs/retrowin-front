@@ -11,7 +11,7 @@
   },
   "overrides": [
     {
-      "includes": ["src/api/generated/**"],
+      "includes": ["src/infra/http/generated/**"],
       "linter": {
         "enabled": false
       }

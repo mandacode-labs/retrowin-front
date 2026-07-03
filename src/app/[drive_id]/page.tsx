@@ -2,17 +2,19 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef } from "react";
-import { useDrive, useMe } from "@/api/hooks";
-import DragFileContainer from "@/components/drag/drag_file_container";
-import FileContainer from "@/components/file/file_container";
-import Background from "@/components/layout/background";
-import Navbar from "@/components/layout/navbar/navbar_container";
-import MenuBox from "@/components/menu/menu_box";
-import SelectBoxContainer from "@/components/select/select_box_container";
-import Window from "@/components/window/window";
-import { useWindowStore } from "@/store/window.store";
-import { WindowType } from "@/types/window";
-import { createWindowKey } from "@/utils/random_key";
+import Background from "@/app/[drive_id]/_components/background";
+import DragLayer from "@/app/[drive_id]/_components/drag-layer";
+import MenuBox from "@/app/[drive_id]/_components/menu/menu-box";
+import Navbar from "@/app/[drive_id]/_components/navbar/navbar";
+import SelectBoxLayer from "@/app/[drive_id]/_components/select-box-layer";
+import Window from "@/app/[drive_id]/_components/window-stack/window";
+import { BindingsClient } from "@/app/[drive_id]/_lib/bindings-client";
+import { useMe } from "@/domain/auth";
+import { useDrive } from "@/domain/file-listing";
+import { WindowType } from "@/entities/window";
+import { createWindowKey } from "@/infra/random-keys";
+import { useWindowStore } from "@/infra/stores";
+import FileContainer from "@/primitives/file-container/file_container";
 import styles from "./page.module.css";
 
 export default function DrivePage() {
@@ -29,7 +31,6 @@ export default function DrivePage() {
   const backgroundWindowRef = useRef<HTMLDivElement>(null);
 
   const meQuery = useMe();
-
   const driveQuery = useDrive(driveID);
 
   const isUnauthorized =
@@ -86,10 +87,11 @@ export default function DrivePage() {
       onContextMenu={(e) => e.preventDefault()}
       role="application"
     >
+      <BindingsClient />
       <Background>
         <MenuBox>
-          <SelectBoxContainer>
-            <DragFileContainer>
+          <SelectBoxLayer>
+            <DragLayer>
               <section
                 ref={backgroundWindowRef}
                 className={`full-size flex-center ${styles.background_window}`}
@@ -109,8 +111,8 @@ export default function DrivePage() {
                 .map((window) => (
                   <Window key={window.key} windowKey={window.key} />
                 ))}
-            </DragFileContainer>
-          </SelectBoxContainer>
+            </DragLayer>
+          </SelectBoxLayer>
         </MenuBox>
       </Background>
       <Navbar windows={windows} driveID={driveID} />

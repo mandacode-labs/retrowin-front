@@ -24,6 +24,9 @@
     "paths": {
       "@/*": [
         "./src/*"
+      ],
+      "@/factories": [
+        "./test/factories.ts"
       ]
     },
     "target": "ES2017"
